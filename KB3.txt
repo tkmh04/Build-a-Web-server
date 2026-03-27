@@ -1,4 +1,4 @@
-VM1: ModSecurity WAF + OWASP CRS
+VM1: ModSecurity WAF + OWASP CRS cơ bản (Nâng cấp thêm)
 Cài ModSecurity
 sudo apt install libnginx-mod-http-modsecurity -y
 ls /etc/nginx/modules-enabled/-> mod-http-modsecurity.conf
