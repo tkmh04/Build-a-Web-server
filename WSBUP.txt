@@ -8,11 +8,12 @@ sudo apt install nginx git php-fpm php-mysql php-curl php-gd php-mbstring php-xm
 # Kiểm tra trạng thái dịch vụ
 sudo systemctl status nginx
 sudo systemctl status php8.2-fpm
+cd /var/www/html
 # Xóa thư mục mặc định
-sudo rm -rf /var/www/html/*
+sudo rm -rf * .git
 
 # Clone code từ GitHub (Thay link repo của bạn vào đây)
-sudo git clone https://github.com/YourUsername/QuanLyThiTracNghiem.git /var/www/html/
+sudo git clone https://github.com/transinh085/QuanLyThiTracNghiem.git .
 
 # Quan trọng: Đưa toàn bộ code ra ngoài nếu nó đang nằm trong thư mục con
 # sudo mv /var/www/html/QuanLyThiTracNghiem/* /var/www/html/
