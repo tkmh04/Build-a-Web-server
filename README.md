@@ -67,3 +67,14 @@ Egress Traffic (Luồng ra): Bạn phải cấu hình nftables trên VM1 hoặc 
 **Cho phép VM2 gọi ra Supabase qua HTTPS: tcp dport 443 ip saddr 192.168.168.10 accept**
 **Chặn toàn bộ các luồng ra ngoài khác không cần thiết**
 Độ trễ (Latency): Vì Database nằm trên Cloud, mỗi truy vấn phải đi qua Internet. Điều này đòi hỏi code ứng dụng trên VM2/VM3 phải tối ưu, nếu không Web sẽ load rất chậm.
+---
+Thêm một IP phụ (Secondary IP) cho máy Windows
+Đây là cách nhanh nhất. Máy Windows của bạn có thể sở hữu nhiều IP cùng lúc trên một card mạng ảo. Khi đó, nó sẽ nói chuyện được với cả Máy 1 và Máy 2.
+Mở Control Panel > Network and Sharing Center > Change adapter settings.
+Chuột phải vào Ethernet 2 > Properties > chọn IPv4 > Properties.
+Nhấn nút Advanced... ở góc dưới.
+Trong phần IP addresses, nhấn Add...
+IP address: 192.168.168.1
+Subnet mask: 255.255.255.0
+Nhấn Add rồi OK hết các bảng.
+Kết quả: Bây giờ card mạng của bạn có cả .167.1 và .168.1. Bạn có thể SSH vào cả hai máy mà không cần đổi đi đổi lại.
