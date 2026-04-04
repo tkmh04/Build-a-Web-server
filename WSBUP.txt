@@ -70,3 +70,8 @@ http://192.168.168.20
 ################
 Trên máy Database (.30): Theo dõi log thời gian thực:
 sudo tail -f /var/lib/mysql/debianws.log
+sudo mysql -u root -p
+SET GLOBAL general_log = 'ON';
+SHOW VARIABLES LIKE 'general_log_file';
+/var/lib/mysql/debianws.log
+
