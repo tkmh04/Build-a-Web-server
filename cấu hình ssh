@@ -1,0 +1,22 @@
+1. Thêm nhiều IP vào Card mạng Windows
+Bạn thực hiện các bước như đã làm ở câu trước, nhưng thay vì chỉ dừng lại ở dải .169.x, hãy làm tiếp:
+
+Nhấn Windows + R, gõ ncpa.cpl, nhấn Enter.
+
+Chuột phải vào VirtualBox Host-Only Network -> Properties.
+
+Chọn Internet Protocol Version 4 (TCP/IPv4) -> Properties.
+
+Tại tab General, đảm bảo bạn đang để IP tĩnh là 192.168.169.1.
+
+Nhấn vào nút Advanced... (Nâng cao).
+
+Tại mục IP addresses, nhấn Add... và thêm các IP sau:
+
+IP address: 192.168.168.1 | Subnet mask: 255.255.255.0
+
+IP address: 192.168.167.1 | Subnet mask: 255.255.255.0
+
+Nhấn OK liên tục để thoát ra ngoài.
+
+Lúc này, máy thật của bạn sẽ đóng vai trò là "cổng" cho cả 3 lớp mạng.
