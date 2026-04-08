@@ -78,6 +78,54 @@ table inet firewall {
     }
 }
 --------------------------
+primary
+----------------------------
+#!/usr/sbin/nft -f
+
+flush ruleset
+
+table inet filter {
+    chain forward {
+        type filter hook forward priority 0; policy drop;
+
+        # 1. Cho phép DMZ và LAN truy cập Internet
+        ip saddr { 192.168.168.0/24, 192.168.169.0/24 } oifname "enp0s3" accept
+
+        # 2. Internet vào Nginx (DMZ) - Port 80, 443
+        iifname "enp0s3" ip daddr 192.168.168.40 tcp dport { 80, 443 } accept
+
+        # 3. Web Server (DMZ) truy cập Database (LAN) - Port 5432
+        ip saddr 192.168.168.0/24 ip daddr 192.168.169.30 tcp dport 5432 accept
+
+        # 4. Chặn LAN truy cập ngược vào DMZ (tăng tính bảo mật)
+        ip saddr 192.168.169.0/24 ip daddr 192.168.168.0/24 drop
+
+        # Cho phép traffic phản hồi
+        ct state established,related accept
+    }
+
+    chain input {
+        type filter hook input priority 0; policy drop;
+        iifname "enp0s8" tcp dport 22 accept
+        iif lo accept
+        ct state established,related accept
+    }
+}
+
+table ip nat {
+    chain prerouting {
+        type nat hook prerouting priority dstnat;
+        # Đẩy traffic từ Internet vào Nginx Proxy
+        iifname "enp0s3" tcp dport { 80, 443 } dnat to 192.168.168.40
+    }
+
+    chain postrouting {
+        type nat hook postrouting priority srcnat;
+        # NAT để các máy con thấy Internet
+        oifname "enp0s3" masquerade
+    }
+}
+----------------------------
 sudo systemctl restart nftables
 sudo nft list ruleset
 KT:SYN Flood+UDP Flood+ICMP Flood+Botnet Traffic
