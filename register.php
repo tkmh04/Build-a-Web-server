@@ -53,9 +53,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web server Primary - Đăng ký</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #020712;
@@ -75,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         body {
             margin: 0;
             min-height: 100vh;
-            font-family: 'Be Vietnam Pro', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
             color: var(--text);
             background:
                 radial-gradient(circle at 14% 18%, rgba(49, 182, 255, 0.18) 0%, transparent 24%),

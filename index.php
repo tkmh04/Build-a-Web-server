@@ -13,6 +13,7 @@ if (isset($_SESSION['user_id'])) {
 }
 
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/ua_parser.php';
 
 $error = '';
 $usernameInput = '';
@@ -31,20 +32,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		if ($user && password_verify($passwordInput, $user['password_hash'])) {
 			$ipAddress = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
 			$userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+			$parsedAgent = parseUserAgentDetails($userAgent);
+			$userRole = ($user['role'] ?? 'user') === 'admin' ? 'admin' : 'user';
 
 			$historyStmt = $pdo->prepare(
-				'INSERT INTO login_history (user_id, ip_address, user_agent) VALUES (:user_id, :ip_address, :user_agent)'
+				'INSERT INTO login_history (
+					user_id,
+					username_at_login,
+					role_at_login,
+					ip_address,
+					user_agent,
+					ua_device_type,
+					ua_device_name,
+					ua_os_name,
+					ua_os_version,
+					ua_browser_name,
+					ua_browser_version
+				)
+				 VALUES (
+					:user_id,
+					:username_at_login,
+					:role_at_login,
+					:ip_address,
+					:user_agent,
+					:ua_device_type,
+					:ua_device_name,
+					:ua_os_name,
+					:ua_os_version,
+					:ua_browser_name,
+					:ua_browser_version
+				)'
 			);
 			$historyStmt->execute([
 				'user_id' => (int) $user['id'],
+				'username_at_login' => substr((string) $user['username'], 0, 30),
+				'role_at_login' => $userRole,
 				'ip_address' => substr($ipAddress, 0, 45),
 				'user_agent' => substr($userAgent, 0, 255),
+				'ua_device_type' => $parsedAgent['device_type'],
+				'ua_device_name' => $parsedAgent['device_name'],
+				'ua_os_name' => $parsedAgent['os_name'],
+				'ua_os_version' => $parsedAgent['os_version'],
+				'ua_browser_name' => $parsedAgent['browser_name'],
+				'ua_browser_version' => $parsedAgent['browser_version'],
 			]);
 
 			session_regenerate_id(true);
 			$_SESSION['user_id'] = (int) $user['id'];
 			$_SESSION['username'] = $user['username'];
-			$_SESSION['role'] = ($user['role'] ?? 'user') === 'admin' ? 'admin' : 'user';
+			$_SESSION['role'] = $userRole;
 
 			if ($_SESSION['role'] === 'admin') {
 				header('Location: admin.php');
@@ -65,9 +101,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Web server Primary - Đăng nhập</title>
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700&display=swap" rel="stylesheet">
 	<style>
 		:root {
 			--bg: #020712;
@@ -86,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		body {
 			margin: 0;
 			min-height: 100vh;
-			font-family: 'Be Vietnam Pro', sans-serif;
+			font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
 			color: var(--text);
 			background:
 				radial-gradient(circle at 14% 18%, rgba(49, 182, 255, 0.18) 0%, transparent 24%),
