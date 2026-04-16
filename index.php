@@ -4,6 +4,10 @@ declare(strict_types=1);
 session_start();
 
 if (isset($_SESSION['user_id'])) {
+	if (($_SESSION['role'] ?? 'user') === 'admin') {
+		header('Location: admin.php');
+		exit;
+	}
 	header('Location: dashboard.php');
 	exit;
 }
@@ -20,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	if ($usernameInput === '' || $passwordInput === '') {
 		$error = 'Vui lòng nhập đầy đủ username và password.';
 	} else {
-		$stmt = $pdo->prepare('SELECT id, username, password_hash FROM users WHERE username = :username LIMIT 1');
+		$stmt = $pdo->prepare('SELECT id, username, password_hash, role FROM users WHERE username = :username LIMIT 1');
 		$stmt->execute(['username' => $usernameInput]);
 		$user = $stmt->fetch();
 
@@ -40,6 +44,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			session_regenerate_id(true);
 			$_SESSION['user_id'] = (int) $user['id'];
 			$_SESSION['username'] = $user['username'];
+			$_SESSION['role'] = ($user['role'] ?? 'user') === 'admin' ? 'admin' : 'user';
+
+			if ($_SESSION['role'] === 'admin') {
+				header('Location: admin.php');
+				exit;
+			}
+
 			header('Location: dashboard.php');
 			exit;
 		}

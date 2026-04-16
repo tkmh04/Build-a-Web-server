@@ -12,6 +12,7 @@ require_once __DIR__ . '/db.php';
 
 $userId = (int) $_SESSION['user_id'];
 $username = $_SESSION['username'] ?? 'User';
+$userRole = ($_SESSION['role'] ?? 'user') === 'admin' ? 'admin' : 'user';
 
 date_default_timezone_set('Asia/Ho_Chi_Minh');
 $currentTime = date('d/m/Y H:i:s');
@@ -168,6 +169,9 @@ $loginHistory = $historyStmt->fetchAll();
         <?php endif; ?>
 
         <a class="btn" href="logout.php">Đăng xuất</a>
+        <?php if ($userRole === 'admin'): ?>
+            <a class="btn" href="admin.php" style="margin-left: 8px;">Vào trang quản trị</a>
+        <?php endif; ?>
     </main>
 </body>
 </html>

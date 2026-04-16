@@ -54,6 +54,7 @@ CREATE TABLE `users` (
   `id` int(10) UNSIGNED NOT NULL,
   `username` varchar(30) NOT NULL,
   `password_hash` varchar(255) NOT NULL,
+  `role` varchar(20) NOT NULL DEFAULT 'user',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -61,8 +62,9 @@ CREATE TABLE `users` (
 -- Đang đổ dữ liệu cho bảng `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `password_hash`, `created_at`) VALUES
-(1, 'hang', '$2y$10$C6nN.HjPFLPwkvud76xVvuSFfCMfQMghqjMLrlb9ZFGryLT8xpLaq', '2026-04-16 13:44:49');
+INSERT INTO `users` (`id`, `username`, `password_hash`, `role`, `created_at`) VALUES
+(1, 'hang', '$2y$10$C6nN.HjPFLPwkvud76xVvuSFfCMfQMghqjMLrlb9ZFGryLT8xpLaq', 'user', '2026-04-16 13:44:49'),
+(2, 'admin', '$2y$12$c8SXMf4RwqnlLPzk67u/je.n8zlPR8agkmtLsR17JH6aUB.7hQ1kq', 'admin', '2026-04-16 17:30:00');
 
 --
 -- Chỉ mục cho các bảng đã đổ
@@ -96,7 +98,7 @@ ALTER TABLE `login_history`
 -- AUTO_INCREMENT cho bảng `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- Các ràng buộc cho các bảng đã đổ

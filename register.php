@@ -35,10 +35,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Username đã tồn tại.';
         } else {
             $passwordHash = password_hash($passwordInput, PASSWORD_DEFAULT);
-            $insertStmt = $pdo->prepare('INSERT INTO users (username, password_hash) VALUES (:username, :password_hash)');
+            $insertStmt = $pdo->prepare('INSERT INTO users (username, password_hash, role) VALUES (:username, :password_hash, :role)');
             $insertStmt->execute([
                 'username' => $usernameInput,
                 'password_hash' => $passwordHash,
+                'role' => 'user',
             ]);
             $success = 'Đăng ký thành công. Bạn có thể đăng nhập ngay.';
             $usernameInput = '';

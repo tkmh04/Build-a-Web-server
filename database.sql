@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   username VARCHAR(30) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
+  role VARCHAR(20) NOT NULL DEFAULT 'user',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
@@ -20,3 +21,7 @@ CREATE TABLE IF NOT EXISTS login_history (
   INDEX idx_user_id (user_id),
   CONSTRAINT fk_login_history_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+INSERT INTO users (username, password_hash, role)
+VALUES ('admin', '$2y$12$c8SXMf4RwqnlLPzk67u/je.n8zlPR8agkmtLsR17JH6aUB.7hQ1kq', 'admin')
+ON DUPLICATE KEY UPDATE role = 'admin';

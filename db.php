@@ -18,6 +18,25 @@ try {
     ]);
 
     $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS users (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(30) NOT NULL UNIQUE,
+            password_hash VARCHAR(255) NOT NULL,
+            role VARCHAR(20) NOT NULL DEFAULT "user",
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB'
+    );
+
+    try {
+        $pdo->exec('ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT "user" AFTER password_hash');
+    } catch (PDOException $schemaError) {
+        $driverCode = isset($schemaError->errorInfo[1]) ? (int) $schemaError->errorInfo[1] : 0;
+        if ($driverCode !== 1060) {
+            throw $schemaError;
+        }
+    }
+
+    $pdo->exec(
         'CREATE TABLE IF NOT EXISTS login_history (
             id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             user_id INT UNSIGNED NOT NULL,
@@ -45,6 +64,7 @@ try {
                     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                     username VARCHAR(30) NOT NULL UNIQUE,
                     password_hash VARCHAR(255) NOT NULL,
+                    role VARCHAR(20) NOT NULL DEFAULT "user",
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB'
             );
@@ -82,4 +102,25 @@ try {
         }
         exit($message);
     }
+}
+
+$adminStmt = $pdo->prepare('SELECT id FROM users WHERE username = :username LIMIT 1');
+$adminStmt->execute(['username' => 'admin']);
+$adminUser = $adminStmt->fetch();
+
+if ($adminUser) {
+    $setRoleStmt = $pdo->prepare('UPDATE users SET role = :role WHERE id = :id');
+    $setRoleStmt->execute([
+        'role' => 'admin',
+        'id' => (int) $adminUser['id'],
+    ]);
+} else {
+    $createAdminStmt = $pdo->prepare(
+        'INSERT INTO users (username, password_hash, role) VALUES (:username, :password_hash, :role)'
+    );
+    $createAdminStmt->execute([
+        'username' => 'admin',
+        'password_hash' => password_hash('123', PASSWORD_DEFAULT),
+        'role' => 'admin',
+    ]);
 }
