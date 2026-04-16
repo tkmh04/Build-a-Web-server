@@ -1,0 +1,113 @@
+CB:Nginx Reverse Proxy+Load Balancer+Failover check
+VM1 192.168.167.10 
+VM2 192.168.168.10 wr primary
+VM3 192.168.168.20 wr backup
+https://github.com/transinh085/QuanLyThiTracNghiem PHP Source
+Database Cloud
+**************************
+VM1:Timeout/Upstream
+Cài Nginx
+sudo apt update
+sudo apt install nginx
+systemctl status nginx
+mở web: http://192.168.167.10 -> Welcome to nginx
+Cấu hình Reverse Proxy
+sudo nano /etc/nginx/sites-available/reverse
+reverse proxy đơn giản, chưa có Load Balancer + Failover Check
+------------------
+upstream backend {
+
+    server 192.168.168.10 weight=3 max_fails=2 fail_timeout=5s;
+
+    server 192.168.168.20 weight=1 max_fails=2 fail_timeout=5s;
+
+}
+
+server {
+
+    listen 80;
+
+    location / {
+
+        proxy_pass http://backend;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+}
+------------------
+sudo ln -s /etc/nginx/sites-available/reverse /etc/nginx/sites-enabled/
+sudo rm /etc/nginx/sites-enabled/default
+sudo nginx -t
+sudo systemctl restart nginx
+sudo nano /etc/nginx/sites-available/reverse
+---------
+upstream backend {
+
+    least_conn;
+
+    server 192.168.168.10 weight=3 max_fails=2 fail_timeout=5s;
+
+    server 192.168.168.20 weight=1 max_fails=2 fail_timeout=5s;
+
+}
+
+server {
+
+    listen 80;
+
+    location / {
+
+        proxy_pass http://backend;
+
+        proxy_connect_timeout 2s;
+        proxy_read_timeout 5s;
+
+        proxy_next_upstream error timeout http_502 http_503 http_504;
+
+    }
+
+}
+---------
+sudo systemctl restart nginx
+++++++++++
+sudo systemctl status nginx
+sudo nginx -t ->ok success
+ls /etc/nginx/sites-enabled/ ->reverse
+cat /etc/nginx/sites-available/reverse
+curl http://localhost
+curl http://192.168.167.10 -> 502 Bad Gateway(failovver, load balan chưa có)
+ss -tulnp | grep 80 -> nginx
+++++++++++
+sudo apt update
+sudo apt install curl -y
+**************************
+VM2: apache+php
+sudo apt update
+sudo apt install apache2 php php-pgsql git unzip
+sudo systemctl restart apache2
+cd /var/www/html
+sudo git clone https://github.com/transinh085/QuanLyThiTracNghiem.gi
+sudo chown -R www-data:www-data QuanLyThiTracNghiem
+ls
+cd QuanLyThiTracNghiem
+--------
+index.php
+config.php
+database.php
+--------
+sudo apt install php-pgsql
+sudo systemctl restart apache2
+--------
+config.php
+connect.php
+db.php
+--------
+sửa MySQL mysqli_query thành PostgreSQL pg_query
+sudo nano /etc/apache2/sites-available/000-default.conf
+DocumentRoot /var/www/html/QuanLyThiTracNghiem
+sudo systemctl restart apache2
+**************************
+VM3: clone
+

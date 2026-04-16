@@ -1,0 +1,46 @@
+cấu hình từ 168.30 thành 169.30
+sudo nano /var/www/html/config.php
+------
+<?php
+define("host_name", "192.168.169.30"); // ĐÃ ĐỔI THÀNH .169.30
+define("db_user", "tracnghiem_user");
+define("db_password", "123");
+define("db_name", "tracnghiemonline");
+
+define("app_path", "/");
+// Lưu ý sửa cả link login tương ứng với IP mới của máy web đó
+define("login_path", "http://192.168.169.10/auth/signin");
+------
+nc -zv 192.168.169.30 3306
+sudo nano /etc/network/interfaces
+-----
+# IP Quản lý (Dải 169)
+auto enp0s8
+iface enp0s8 inet static
+    address 192.168.169.30
+    netmask 255.255.255.0
+
+# IP Cầu nối để Web nhìn thấy (Dải 168)
+auto enp0s8:0
+iface enp0s8:0 inet static
+    address 192.168.168.30
+    netmask 255.255.255.0
+-----
+sudo systemctl restart networking
+Kiểm tra Log lỗi trên Web Server (.10) nếu bị 500 internal server error
+sudo tail -f /var/log/nginx/error.log
+# Hoặc log của PHP-FPM
+sudo tail -f /var/log/php8.2-fpm.log
+------
+sudo mysql -u root -p
+
+-- Cấp quyền cho IP mà log báo lỗi (192.168.169.1)
+CREATE USER 'tracnghiem_user'@'192.168.169.1' IDENTIFIED BY '123';
+GRANT ALL PRIVILEGES ON tracnghiemonline.* TO 'tracnghiem_user'@'192.168.169.1';
+
+-- Để chắc chắn nhất trong môi trường Lab, bạn có thể cấp quyền cho cả dải mạng LAN
+-- GRANT ALL PRIVILEGES ON tracnghiemonline.* TO 'tracnghiem_user'@'192.168.169.%' IDENTIFIED BY '123';
+
+FLUSH PRIVILEGES;
+EXIT;
+------
