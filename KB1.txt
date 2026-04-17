@@ -131,3 +131,38 @@ table ip nat {
     }
 }
 -------
+
+
+------
+table inet filter {
+        chain input {
+                type filter hook input priority filter; policy drop;
+                iif "lo" accept
+                ct state established,related accept
+                ip protocol icmp accept
+                iif "enp0s8" tcp dport 80 accept
+        }
+
+        chain forward {
+                type filter hook forward priority filter; policy drop;
+                ct state established,related accept
+                ct status dnat accept
+                iif "enp0s8" oif "enp0s9" drop
+                iif "enp0s8" oif "enp0s10" drop
+                iif "enp0s9" oif "enp0s10" tcp dport 3306 accept
+        }
+
+        chain output {
+                type filter hook output priority filter; policy accept;
+        }
+}
+table ip nat {
+        chain prerouting {
+                type nat hook prerouting priority dstnat; policy accept;
+                iif "enp0s8" ip daddr 192.168.167.10 tcp dport 80 dnat to 192.168.168.40
+        }
+
+        chain postrouting {
+                type nat hook postrouting priority srcnat; policy accept;
+        }
+}
