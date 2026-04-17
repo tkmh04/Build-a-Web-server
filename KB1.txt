@@ -76,6 +76,30 @@ sudo nft add rule ip
 sudo sh -c 'nft list ruleset > /etc/nftables.conf'
 sudo systemctl enable nftables
 -------
+flush ruleset
+
+table inet filter {
+
+    chain input {
+        type filter hook input priority 0;
+        policy drop;
+
+        iif lo accept
+        ct state established,related accept
+        ip protocol icmp accept
+
+        # cho phép HTTP vào firewall
+        iif "enp0s8" tcp dport 80 accept
+    }
+
+    chain forward {
+        type filter hook forward priority 0;
+        policy drop;
+
+        ct state established,related accept
+
+        # ✅ CHỈ cho phép traffic đã DNAT
+        ct status dnat accept
 
         # ❌ CHẶN WAN → DMZ
         iif "enp0s8" oif "enp0s9" drop
@@ -99,7 +123,7 @@ table ip nat {
         type nat hook prerouting priority -100;
 
         # chỉ DNAT khi truy cập firewall
-        iif "enp0s8" ip daddr 192.168.167.10 tcp dport 80 dnat to 192.1>
+        iif "enp0s8" ip daddr 192.168.167.10 tcp dport 80 dnat to 192.168.168.40
     }
 
     chain postrouting {
