@@ -15,68 +15,7 @@ net.ipv4.tcp_syn_retries = 3
 sudo sysctl -p
 sudo nano /etc/nftables.conf
 --------------------------
-#!/usr/sbin/nft -f
 
-# 1. Xóa toàn bộ quy tắc cũ để tránh xung đột
-flush ruleset
-
-table inet firewall {
-    # Định nghĩa danh sách trắng (1 giờ)
-    set whitelist {
-        type ipv4_addr
-        flags dynamic
-        timeout 1h
-    }
-
-    # Định nghĩa danh sách đen (10 phút)
-    set blacklist {
-        type ipv4_addr
-        flags dynamic
-        timeout 10m
-    }
-
-    chain input {
-        type filter hook input priority 0; policy drop;
-
-        # Chấp nhận các kết nối đã thiết lập và localhost
-        ct state established,related accept
-        iif "lo" accept
-
-        # Chặn ngay lập tức nếu IP nằm trong blacklist
-        ip saddr @blacklist drop
-
-        # Cho phép IP trong whitelist
-        ip saddr @whitelist accept
-
-        # Cho phép các cổng dịch vụ cơ bản
-        tcp dport { 22, 80, 443 } accept
-
-        # Giới hạn ICMP (Ping) để tránh flood
-        ip protocol icmp limit rate 5/second accept
-
-        # XỬ LÝ LỖI DÒNG SYN & UDP:
-        # Nếu vượt quá 20 gói SYN/giây tới port 80 -> Cho vào blacklist và drop
-        tcp flags syn tcp dport 80 limit rate over 20/second update @blacklist { ip saddr } drop
-        tcp flags syn tcp dport 80 accept
-
-        # Nếu vượt quá 10 gói UDP/giây tới port 80 -> Cho vào blacklist và drop
-        udp dport 80 limit rate over 10/second update @blacklist { ip saddr } drop
-        udp dport 80 accept
-    }
-
-    chain forward {
-        type filter hook forward priority 0; policy drop;
-        ct state established,related accept
-        
-        # Cho phép dải mạng nội bộ (nếu có)
-        ip saddr 192.168.168.0/24 accept
-    }
-
-    chain output {
-        # Bổ sung đầy đủ thông số cho chain output
-        type filter hook output priority 0; policy accept;
-    }
-}
 --------------------------
 primary
 ----------------------------
@@ -129,3 +68,35 @@ table ip nat {
 sudo systemctl restart nftables
 sudo nft list ruleset
 KT:SYN Flood+UDP Flood+ICMP Flood+Botnet Traffic
+--------------------------------------------------
+sudo nft flush ruleset
+sudo nft add table ip nat
+
+# Bọc nháy đơn cho các chain
+sudo nft add chain ip nat prerouting '{ type nat hook prerouting priority 0 ; }'
+sudo nft add chain ip nat postrouting '{ type nat hook postrouting priority 100 ; }'
+
+# Thêm luật NAT
+sudo nft add rule ip nat prerouting ip daddr 192.168.167.10 tcp dport 80 dnat to 192.168.168.40
+sudo nft add rule ip nat postrouting oifname "enp0s8" masquerade
+sudo nft add rule ip nat postrouting oifname "enp0s9" masquerade
+sudo nft add table ip filter
+
+# Bọc nháy đơn cho chain forward
+sudo nft add chain ip filter forward '{ type filter hook forward priority 0 ; policy drop ; }'
+
+# Cho phép traffic quay về
+sudo nft add rule ip filter forward ct state established,related accept
+
+# Cho phép từ máy Test vào WAF
+sudo nft add rule ip filter forward iifname "enp0s8" ip daddr 192.168.168.40 tcp dport 80 accept
+
+# Cho phép máy WAF và LAN trả lời ngược ra (Giải quyết lỗi kẹt traffic)
+sudo nft add rule ip filter forward iifname "enp0s9" accept
+sudo nft add rule ip filter forward iifname "enp0s10" accept
+
+# Cho phép Ping
+sudo nft add rule ip filter forward icmp type echo-request accept
+--------------------------------------------------
+sudo sh -c 'nft list ruleset > /etc/nftables.conf'
+sudo systemctl enable nftables
