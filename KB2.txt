@@ -114,9 +114,8 @@ VM3: clone
 -----------------
 sudo nano /etc/nginx/nginx.conf
 ----
-http {
-
-    upstream backend {
+upstream backend {
+#       ip_hash;
         server 192.168.168.10 max_fails=3 fail_timeout=10s;
         server 192.168.168.20 max_fails=3 fail_timeout=10s;
     }
@@ -124,15 +123,23 @@ http {
     server {
         listen 80;
 
-        location / {
-            proxy_pass http://backend;
+location / {
+    proxy_pass http://backend;
 
-            proxy_http_version 1.0;
-            proxy_set_header Connection close;
+    # Header quan trọng để Backend không tự ý Redirect
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
 
-            proxy_next_upstream error timeout http_500 http_502 http_503 http_504;
-        }
-    }
+    # Ngăn Backend gửi lệnh Redirect làm trình duyệt bối rối
+    proxy_redirect off;
+
+    # Tăng thời gian chờ để ModSecurity kịp xử lý
+    proxy_connect_timeout 90;
+    proxy_send_timeout 90;
+    proxy_read_timeout 90;
 }
+    }
 ----
 
