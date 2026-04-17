@@ -100,3 +100,28 @@ sudo nft add rule ip filter forward icmp type echo-request accept
 --------------------------------------------------
 sudo sh -c 'nft list ruleset > /etc/nftables.conf'
 sudo systemctl enable nftables
+-------
+myhang@debian:~$ sudo nft list ruleset
+table ip nat {
+        chain prerouting {
+                type nat hook prerouting priority filter; policy accept;
+                ip daddr 192.168.167.10 tcp dport 80 dnat to 192.168.168.40
+        }
+
+        chain postrouting {
+                type nat hook postrouting priority srcnat; policy accept;
+                oifname "enp0s8" masquerade
+                oifname "enp0s9" masquerade
+        }
+}
+table ip filter {
+        chain forward {
+                type filter hook forward priority filter; policy drop;
+                ct state established,related accept
+                iifname "enp0s8" ip daddr 192.168.168.40 tcp dport 80 accept
+                iifname "enp0s9" accept
+                iifname "enp0s10" accept
+                icmp type echo-request accept
+        }
+}
+-------
