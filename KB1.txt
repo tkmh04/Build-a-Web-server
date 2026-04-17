@@ -70,58 +70,40 @@ sudo nft list ruleset
 KT:SYN Flood+UDP Flood+ICMP Flood+Botnet Traffic
 --------------------------------------------------
 sudo nft flush ruleset
-sudo nft add table ip nat
-
-# Bọc nháy đơn cho các chain
-sudo nft add chain ip nat prerouting '{ type nat hook prerouting priority 0 ; }'
-sudo nft add chain ip nat postrouting '{ type nat hook postrouting priority 100 ; }'
-
 # Thêm luật NAT
-sudo nft add rule ip nat prerouting ip daddr 192.168.167.10 tcp dport 80 dnat to 192.168.168.40
-sudo nft add rule ip nat postrouting oifname "enp0s8" masquerade
-sudo nft add rule ip nat postrouting oifname "enp0s9" masquerade
-sudo nft add table ip filter
-
-# Bọc nháy đơn cho chain forward
-sudo nft add chain ip filter forward '{ type filter hook forward priority 0 ; policy drop ; }'
-
-# Cho phép traffic quay về
-sudo nft add rule ip filter forward ct state established,related accept
-
-# Cho phép từ máy Test vào WAF
-sudo nft add rule ip filter forward iifname "enp0s8" ip daddr 192.168.168.40 tcp dport 80 accept
-
-# Cho phép máy WAF và LAN trả lời ngược ra (Giải quyết lỗi kẹt traffic)
-sudo nft add rule ip filter forward iifname "enp0s9" accept
-sudo nft add rule ip filter forward iifname "enp0s10" accept
-
-# Cho phép Ping
-sudo nft add rule ip filter forward icmp type echo-request accept
+sudo nft add rule ip 
 --------------------------------------------------
 sudo sh -c 'nft list ruleset > /etc/nftables.conf'
 sudo systemctl enable nftables
 -------
-myhang@debian:~$ sudo nft list ruleset
-table ip nat {
-        chain prerouting {
-                type nat hook prerouting priority filter; policy accept;
-                ip daddr 192.168.167.10 tcp dport 80 dnat to 192.168.168.40
-        }
 
-        chain postrouting {
-                type nat hook postrouting priority srcnat; policy accept;
-                oifname "enp0s8" masquerade
-                oifname "enp0s9" masquerade
-        }
+        # ❌ CHẶN WAN → DMZ
+        iif "enp0s8" oif "enp0s9" drop
+
+        # ❌ CHẶN WAN → LAN
+        iif "enp0s8" oif "enp0s10" drop
+
+        # ✅ DMZ → LAN (MySQL)
+        iif "enp0s9" oif "enp0s10" tcp dport 3306 accept
+    }
+
+    chain output {
+        type filter hook output priority 0;
+        policy accept;
+    }
 }
-table ip filter {
-        chain forward {
-                type filter hook forward priority filter; policy drop;
-                ct state established,related accept
-                iifname "enp0s8" ip daddr 192.168.168.40 tcp dport 80 accept
-                iifname "enp0s9" accept
-                iifname "enp0s10" accept
-                icmp type echo-request accept
-        }
+
+table ip nat {
+
+    chain prerouting {
+        type nat hook prerouting priority -100;
+
+        # chỉ DNAT khi truy cập firewall
+        iif "enp0s8" ip daddr 192.168.167.10 tcp dport 80 dnat to 192.1>
+    }
+
+    chain postrouting {
+        type nat hook postrouting priority 100;
+    }
 }
 -------
