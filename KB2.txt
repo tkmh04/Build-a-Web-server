@@ -111,3 +111,59 @@ sudo systemctl restart apache2
 **************************
 VM3: clone
 
+-----------------
+sudo nano /etc/nginx/nginx.conf
+----
+http {
+    upstream backend {
+        # Cấu hình trọng số: 2 request vào .10, 1 request vào .20
+        server 192.168.168.10 weight=2 max_fails=3 fail_timeout=10s;
+        server 192.168.168.20 weight=1 max_fails=3 fail_timeout=10s;
+    }
+
+    server {
+        listen 80;
+
+        location / {
+            proxy_pass http://backend;
+
+            # Các Header bắt buộc để tránh lỗi Redirect
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            
+            proxy_redirect off;
+            proxy_http_version 1.1;
+        }
+    }
+}
+----
+upstream backend {
+#       ip_hash;
+        server 192.168.168.10 weight=2 max_fails=3 fail_timeout=10s;
+        server 192.168.168.20 weight=1 max_fails=3 fail_timeout=10s;
+    }
+
+    server {
+        listen 80;
+
+location / {
+    proxy_pass http://backend;
+
+    # Header quan trọng để Backend không tự ý Redirect
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    # Ngăn Backend gửi lệnh Redirect làm trình duyệt bối rối
+    proxy_redirect off;
+
+    # Tăng thời gian chờ để ModSecurity kịp xử lý
+    proxy_connect_timeout 90;
+    proxy_send_timeout 90;
+    proxy_read_timeout 90;
+}
+    }
+

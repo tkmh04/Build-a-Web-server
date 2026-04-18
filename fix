@@ -1,0 +1,2 @@
+sudo nft flush ruleset
+time mysql -h 192.168.169.30 -u mh -p'123' -e "status"
