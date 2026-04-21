@@ -51,7 +51,7 @@ sudo wget https://raw.githubusercontent.com/SpiderLabs/ModSecurity/v3/master/mod
 sudo sed -i 's/SecRuleEngine DetectionOnly/SecRuleEngine On/' modsecurity.conf
 ```
 
-👉 Sửa thêm trong `modsecurity.conf`:
+👉 Sửa thêm trong `modsecurity.conf`: sudo nano /etc/nginx/modsec/modsecurity.conf
 
 ```apache
 # Bật log
