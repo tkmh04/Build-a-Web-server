@@ -73,3 +73,4 @@ http://192.168.168.10
 ################
 Trên máy Database (.30): Theo dõi log thời gian thực:
 sudo tail -f /var/lib/mysql/debianws.log
+sudo find . -type f -name "*.php" -exec sed -i 's/Web server Backup/Web server 2/g' {} +
