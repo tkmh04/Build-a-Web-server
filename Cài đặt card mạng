@@ -1,0 +1,8 @@
+firewall: card enp0s8 192.168.167.10 hostonly
+card enp0s9 192.168.168.1 intenal dmz
+card enp0s10 192.168.169.1 internel lan
+nginx load modsecurity: card enp0s8 192.168.168.40 dmz
+webserver primary: card enp0s8 192.168.168.10 dmz
+webserver backup: card enp0s8 192.168.168.20 dmz
+database: card enp0s8 192.168.169.30 lan
+máy test từ internett: card enp0s3 192.168.167.5 hostonly
