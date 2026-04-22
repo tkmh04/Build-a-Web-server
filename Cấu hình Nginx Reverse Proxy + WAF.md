@@ -19,21 +19,13 @@ Triển khai **Web Application Firewall (WAF)** sử dụng:
 
 ---
 
-## Requirements
-
-* OS: Ubuntu 20.04 / 22.04 hoặc Debian
-* Nginx >= 1.18
-* Quyền sudo
-
----
-
 ## Installation
 
 ### 1. Cài đặt Nginx + ModSecurity v3
 
 ```bash
 sudo apt update
-sudo apt install nginx libnginx-mod-http-modsecurity git -y
+sudo apt install nginx libnginx-mod-http-modsecurity git wget -y
 ```
 
 ---
@@ -111,8 +103,11 @@ SecRuleRemoveById 920350
 
 ```nginx
 upstream backend_servers {
-    server 192.168.168.10:80 max_fails=3 fail_timeout=10s;
-    server 192.168.168.20:80 backup;
+    server 192.168.168.10:80 weight=2 max_fails=3 fail_timeout=10s;
+    server 192.168.168.20:80 weight=1 max_fails=3 fail_timeout=10s;
+    
+    # Server .40 dự phòng
+    # server 192.168.169.40:80 backup;
 }
 
 server {
@@ -207,5 +202,6 @@ ls /etc/nginx/modsec/coreruleset/rules/
 ### 3. Debug lỗi
 
 ```bash
-sudo tail -f /var/log/nginx/error.log
+Log WAF: sudo tail -f /var/log/modsec_audit.log
+Log Nginx Error: sudo tail -f /var/log/nginx/error.log
 ```
