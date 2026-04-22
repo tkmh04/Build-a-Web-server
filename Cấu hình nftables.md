@@ -49,59 +49,84 @@ Dán nội dung sau vào file:
 
 ```nftables
 flush ruleset
+# FILTER TABLE
 
 table inet filter {
+
+    # INPUT (Firewall)
     chain input {
         type filter hook input priority 0; policy drop;
 
-        # 1. Cho phép loopback và các kết nối đã thiết lập
+        # Loopback
         iif lo accept
+
+        # Established / Related
         ct state established,related accept
 
-        # 2. CHẶN PING (ICMP) từ bên ngoài vào trực tiếp Firewall
-        iif "enp0s8" icmp type echo-request drop
+        # SSH chỉ từ máy admin
+        ip saddr 192.168.167.0/24 tcp dport 22 accept
 
-        # 3. Cho phép SSH quản trị
-        tcp dport 22 accept
+        # Ping giới hạn từ WAN
+        iif "enp0s8" icmp type echo-request limit rate 5/second accept
     }
+
+
+    # FORWARD
 
     chain forward {
         type filter hook forward priority 0; policy drop;
 
-        # 4. Cho phép các phản hồi của kết nối đã thiết lập
+        # Cho phép kết nối đã thiết lập
         ct state established,related accept
 
-        # 5. CHỈ CHO PHÉP traffic đã qua DNAT (Traffic đi qua IP Firewall 167.10)
-        # Ngăn chặn truy cập trực tiếp vào IP nội bộ từ bên ngoài
-        ct status dnat accept
+        # CHO PHÉP TRAFFIC ĐÃ DNAT (WAN -> DMZ)
 
-        # 6. CHẶN PING từ WAN xuyên vào nội bộ (DMZ và LAN)
-        iif "enp0s8" icmp type echo-request drop
+        iif "enp0s8" oif "enp0s9" tcp dport {80,443} ct status dnat accept
+        #  CHẶN TRUY CẬP TRỰC TIẾP BACKEND (ANTI-BYPASS)
 
-        # 7. MỞ LUỒNG NỘI BỘ: DMZ kết nối sang LAN (Web -> Database)
-        iif "enp0s9" oif "enp0s10" accept
+        ip daddr 192.168.168.40 tcp dport {80,443} drop
 
-        # 8. Cho phép các máy nội bộ (DMZ, LAN) ra Internet
+        # (OPTIONAL) CHẶN DMZ TỰ TRUY CẬP CHÍNH NÓ
+
+        iif "enp0s9" ip daddr 192.168.168.40 tcp dport {80,443} drop
+        # DMZ -> LAN (Web -> Database)
+        iif "enp0s9" oif "enp0s10" tcp dport 3306 accept
+
+        # LAN + DMZ -> Internet
+
         iif { "enp0s9", "enp0s10" } oif "enp0s8" accept
     }
+
+
+    # OUTPUT
 
     chain output {
         type filter hook output priority 0; policy accept;
     }
 }
 
+
+# NAT TABLE
+
 table ip nat {
+
+
+    # PREROUTING (DNAT)
+
     chain prerouting {
         type nat hook prerouting priority dstnat;
 
-        # 9. Port Forwarding (DNAT): Điều hướng traffic HTTP/HTTPS về Web Server
-        iif "enp0s8" ip daddr 192.168.167.10 tcp dport { 80, 443 } dnat to 192.168.168.40
+        # HTTP/HTTPS → Reverse Proxy
+        iif "enp0s8" ip daddr 192.168.167.10 tcp dport {80,443} dnat to 192.168.168.40
     }
+
+
+    # POSTROUTING (SNAT)
 
     chain postrouting {
         type nat hook postrouting priority srcnat;
 
-        # 10. NAT Masquerade: Giúp máy nội bộ có Internet qua IP của Firewall
+        # NAT cho LAN + DMZ ra Internet
         oif "enp0s8" masquerade
     }
 }
