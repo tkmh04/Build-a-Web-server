@@ -17,26 +17,27 @@ sudo systemctl restart mariadb
 
 # Tải file database từ GitHub về máy
 cd ~
-wget https://raw.githubusercontent.com/transinh085/QuanLyThiTracNghiem/main/database/tracnghiemonline.sql
+# Tải file SQL từ link của bạn (dùng link raw để lấy nội dung chuẩn)
+wget https://raw.githubusercontent.com/tkmh04/Build-a-Web-server/webserver/webserver.sql -O setup.sql
 sudo mysql -u root -p
 ________________________
--- 1. Tạo Database duy nhất cho dự án
-CREATE DATABASE tracnghiemonline;
+-- 1. Tạo Database tên là webserver
+CREATE DATABASE IF NOT EXISTS webserver;
 
--- 2. Tạo User và cấp quyền cho máy Web Primary (.10)
-CREATE USER 'tracnghiem_user'@'192.168.168.10' IDENTIFIED BY '123';
-GRANT ALL PRIVILEGES ON tracnghiemonline.* TO 'tracnghiem_user'@'192.168.168.10';
+-- 2. Tạo User 'mh' cho máy Web Primary (.10)
+CREATE USER 'mh'@'192.168.168.10' IDENTIFIED BY '123';
+GRANT ALL PRIVILEGES ON webserver.* TO 'mh'@'192.168.168.10';
 
--- 3. Tạo User và cấp quyền cho máy Web Backup (.20)
-CREATE USER 'tracnghiem_user'@'192.168.168.20' IDENTIFIED BY '123';
-GRANT ALL PRIVILEGES ON tracnghiemonline.* TO 'tracnghiem_user'@'192.168.168.20';
+-- 3. Tạo User 'mh' cho máy Web Backup (.20)
+CREATE USER 'mh'@'192.168.168.20' IDENTIFIED BY '123';
+GRANT ALL PRIVILEGES ON webserver.* TO 'mh'@'192.168.168.20';
 
 -- 4. Áp dụng thay đổi và thoát
 FLUSH PRIVILEGES;
 EXIT;
 ________________________
 # Đổ dữ liệu từ file .sql vào database đã tạo
-sudo mysql -u root -p tracnghiemonline < ~/tracnghiemonline.sql
+sudo mysql -u root -p webserver < ~/setup.sql
 
 # Lệnh kiểm tra cuối cùng: Xem danh sách các bảng đã có chưa
 sudo mysql -u root -p -e "USE tracnghiemonline; SHOW TABLES;"
@@ -51,3 +52,17 @@ sudo ufw allow from 192.168.168.20 to any port 3306
 # Kiểm tra lại bảng danh sách
 sudo ufw status
 ____________________________
+# Kiểm tra thiết lập thành công
+mysql -u root -p
+SHOW DATABASES;
+SHOW TABLES;
+SELECT User, Host FROM mysql.user;
++-------------+----------------+
+| User        | Host           |
++-------------+----------------+
+| mh          | 192.168.168.10 |
+| mh          | 192.168.168.20 |
+| mariadb.sys | localhost      |
+| mysql       | localhost      |
+| root        | localhost      |
++-------------+----------------+
