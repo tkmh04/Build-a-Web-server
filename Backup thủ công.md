@@ -49,3 +49,19 @@ ls /home/mh.webserver.sql
 borg create --stats --progress mh@192.168.169.40:/backup/borg::db-$(date +%F-%H%M) /home/mh/webserver.sql
 .40 Kho lưu
 borg list mh@192.168.169.40:/backup/borg
+Khôi phục:
+.30 Database 
+mysql -u mh -p123 -e "DROP DATABASE webserver;"
+cd /home/mh
+export BORG_PASSPHRASE='123'
+sudo -E borg extract mh@192.168.169.40:/backup/borg::db-2026-04-22-1337
+mysql -u mh -p123 -e "CREATE DATABASE webserver;"
+sudo cat /home/mh/webserver.sql | sudo mysql -u mh -p123 webserver
+.10 Webserver
+sudo rm -rf /var/www/html/*
+cd /
+export BORG_PASSPHRASE='123'
+sudo -E borg extract mh@192.168.169.40:/backup/borg::src-2026-04-22-1347
+cd /var/www/html
+sudo find . -type f -name "*.php" -exec sed -i 's/Web server 1/Web server Backup/g' {} +
+sudo chown -R www-data:www-data /var/www/html
