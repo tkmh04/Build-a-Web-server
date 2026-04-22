@@ -68,6 +68,18 @@ sudo ufw allow from 192.168.168.20 to any port 3306
 # Kích hoạt và kiểm tra trạng thái
 sudo ufw enable
 sudo ufw status
+-- Kết quả
+Status: active
+
+To                         Action      From
+--                         ------      ----
+22                         ALLOW       Anywhere
+3306                       ALLOW       192.168.168.20
+3306                       ALLOW       192.168.168.10
+22/tcp                     ALLOW       Anywhere
+22                         ALLOW       192.168.169.0/24
+22 (v6)                    ALLOW       Anywhere (v6)
+22/tcp (v6)                ALLOW       Anywhere (v6)
 ```
 
 ## 6. Kiểm tra thiết lập thành công
@@ -76,11 +88,14 @@ Sau khi hoàn tất, sử dụng các lệnh sau để xác nhận trạng thái
 ### Kiểm tra Database và Bảng
 ```bash
 sudo mysql -u root -p -e "SHOW DATABASES; USE webserver; SHOW TABLES;"
+hoặc mysql -u root -p
+SHOW DATABASES;
+SHOW TABLES;
 ```
 
 ### Kiểm tra Danh sách User và Host
 ```sql
--- Đăng nhập mysql và chạy:
+-- Đăng nhập mysql -u root -p :
 SELECT User, Host FROM mysql.user;
 ```
 
