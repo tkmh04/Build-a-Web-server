@@ -1,77 +1,126 @@
-Backup Web server
+# Hướng dẫn Thiết lập Web Server (192.168.168.20)
+
+## Bước 1: Cài đặt Môi trường (Nginx & PHP 8.2)
+```bash
 # Cập nhật hệ thống
 sudo apt update && sudo apt upgrade -y
 
-# Cài đặt Nginx, Git và PHP-FPM (Sử dụng bản 8.2 cho Debian 12)
+# Cài đặt Nginx và các module PHP cần thiết cho MariaDB
 sudo apt install nginx git php-fpm php-mysql php-curl php-gd php-mbstring php-xml php-zip -y
 
-# Kiểm tra trạng thái dịch vụ
-sudo systemctl status nginx
-sudo systemctl status php8.2-fpm
+# Đảm bảo dịch vụ khởi động cùng hệ thống
+sudo systemctl enable nginx php8.2-fpm
+sudo systemctl start nginx php8.2-fpm
+```
+
+## Bước 2: Tải Mã nguồn & Phân quyền
+```bash
 cd /var/www/html
-# Xóa thư mục mặc định
-sudo rm -rf * .git
 
-# Clone code từ GitHub (Thay link repo của bạn vào đây)
-sudo git clone https://github.com/transinh085/QuanLyThiTracNghiem.git .
+# Xóa dữ liệu cũ
+sudo rm -rf *
 
-# Quan trọng: Đưa toàn bộ code ra ngoài nếu nó đang nằm trong thư mục con
-# sudo mv /var/www/html/QuanLyThiTracNghiem/* /var/www/html/
+# Clone chính xác branch 'webserver'
+sudo git clone -b webserver https://github.com/tkmh04/Build-a-Web-server.git .
 
-# Phân quyền cho Nginx có quyền đọc/ghi file
+# Xóa file database.sql để bảo mật
+sudo rm -f database.sql
+sudo rm -f webserver.sql
+
+# Phân quyền cho Web Server
 sudo chown -R www-data:www-data /var/www/html
 sudo chmod -R 755 /var/www/html
+```
 
+## Bước 3: Cấu hình Kết nối Database
+Vì mã nguồn của bạn sử dụng file `db_config.php` trả về mảng, hãy cấu hình như sau:
+
+```bash
+sudo nano /var/www/html/db_config.php
+```
+
+**Nội dung file:**
+```php
+<?php
+declare(strict_types=1);
+
+return [
+    'dbHost' => '192.168.169.30', // IP máy Database (Vùng LAN)
+    'dbName' => 'webserver',
+    'dbUser' => 'mh',
+    'dbPass' => '123',
+    'dbPort' => 3306,
+    'schemaVersion' => 3,
+    'isLocalDebug' => true,
+];
+```
+
+## Bước 4: Cấu hình Nginx Virtual Host
+Cấu hình này hỗ trợ URL thân thiện (`url=$uri`) và bảo mật các file config.
+
+```bash
 sudo nano /etc/nginx/sites-available/default
-__________________
+```
+
+**Nội dung chuẩn:**
+```nginx
 server {
     listen 80;
     server_name 192.168.168.20;
     root /var/www/html;
-    index index.php index.html index.htm;
+    index index.php index.html;
 
-location / {
-    # Dòng này tương ứng với RewriteRule trong .htaccess của bạn
-    # Nó sẽ lấy phần sau dấu / và gán vào biến url
-    try_files $uri $uri/ /index.php?url=$uri&$args;
-}
-    # Đoạn này để Nginx biết cách chạy file PHP
+    location / {
+        # Định tuyến cho MVC/Index.php
+        try_files $uri $uri/ /index.php?url=$uri&$args;
+    }
+
     location ~ \.php$ {
         include snippets/fastcgi-php.conf;
-        # Kiểm tra kỹ số 8.2 (hoặc 7.4) cho đúng bản PHP của bạn
         fastcgi_pass unix:/run/php/php8.2-fpm.sock;
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_nam>
+        
+        # Tăng timeout cho các tác vụ nặng
+        fastcgi_read_timeout 300;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
         include fastcgi_params;
     }
 
-    # Chặn truy cập vào các file cấu hình nhạy cảm
-    location ~ /\.ht {
+    # Bảo mật: Chặn truy cập file .git và các file config
+    location ~ /\.(?!well-known) {
+        deny all;
+    }
+
+    location ~* (db_config|config)\.php$ {
         deny all;
     }
 }
-__________________
-sudo nginx -t && sudo systemctl restart nginx
-sudo nano /var/www/html/config.php
-__________________
-<?php
-define("host_name", "192.168.168.30"); // IP máy Database
-define("db_user", "tracnghiem_user");   // User đã tạo ở máy .30
-define("db_password", "123");   // Password của user đó
-define("db_name", "tracnghiemonline");
+```
+*Kiểm tra và Restart:* `sudo nginx -t && sudo systemctl restart nginx`
 
-define("app_path", "/");                // Gốc ứng dụng trên Linux
-define("login_path", "http://192.168.168.20/auth/signin"); // IP máy Web này
-__________________
-Trên máy Web (.20): Kiểm tra xem có thấy cổng 3306 của máy .30 không:
-nc -zv 192.168.168.30 3306
-=> (UNKNOWN) [192.168.168.30] 3306 (mysql) open
-################
-http://192.168.168.20
-################
-Trên máy Database (.30): Theo dõi log thời gian thực:
-sudo tail -f /var/lib/mysql/debianws.log
-sudo mysql -u root -p
-SET GLOBAL general_log = 'ON';
-SHOW VARIABLES LIKE 'general_log_file';
-/var/lib/mysql/debianws.log
+## Bước 5: Tùy chỉnh Tên hiển thị & Tìm kiếm
+Để phân biệt với máy Backup, ta đổi tất cả dòng chữ "Web server Primary" thành "Web server 2" trong toàn bộ mã nguồn:
 
+```bash
+cd /var/www/html
+
+# Đổi tên hiển thị cho webserver 2 và trong tất cả các tệp PHP (bao gồm admin.php, dashboard.php,...)
+sudo find . -type f -name "*.php" -exec sed -i 's/Web server Primary/Web server 2/g' {} +
+
+# Kiểm tra lại xem đã đổi thành công chưa
+grep -r "Web server 2" .
+```
+
+## Bước 6: Kiểm tra kết nối cuối cùng
+Đảm bảo máy Web có thể gọi được máy Database qua Firewall:
+
+```bash
+# kiểm tra kết nối máy lan .30
+nc -zv 192.168.169.30 3306
+Kết quả:
+192.168.169.30: inverse host lookup failed: Host name lookup failure
+(UNKNOWN) [192.168.169.30] 3306 (mysql) open
+```
+
+
+
+---
