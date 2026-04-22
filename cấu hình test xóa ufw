@@ -1,0 +1,33 @@
+mh@vm-internet:~$ sudo ufw disable
+Firewall stopped and disabled on system startup
+mh@vm-internet:~$ # Dừng và vô hiệu hóa dịch vụ
+sudo systemctl stop ufw
+sudo systemctl disable ufw
+
+# Gỡ bỏ gói phần mềm và xóa file cấu hình
+sudo apt purge ufw -y
+
+# Xóa các gói phụ thuộc không còn dùng đến
+sudo apt autoremove -y
+Synchronizing state of ufw.service with SysV service script with /lib/systemd/systemd-sysv-install.
+Executing: /lib/systemd/systemd-sysv-install disable ufw
+Removed "/etc/systemd/system/multi-user.target.wants/ufw.service".
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+The following packages will be REMOVED:
+  ufw*
+0 upgraded, 0 newly installed, 1 to remove and 1 not upgraded.
+After this operation, 878 kB disk space will be freed.
+(Reading database ... 115430 files and directories currently installed.)
+Removing ufw (0.36.2-1) ...
+Skip stopping firewall: ufw (not enabled)
+Processing triggers for man-db (2.11.2-2) ...
+(Reading database ... 115336 files and directories currently installed.)
+Purging configuration files for ufw (0.36.2-1) ...
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+0 upgraded, 0 newly installed, 0 to remove and 1 not upgraded.
+mh@vm-internet:~$ sudo nft flush ruleset
+mh@vm-internet:~$
