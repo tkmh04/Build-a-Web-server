@@ -6,3 +6,4 @@ webserver primary: card enp0s8 192.168.168.10 dmz
 webserver backup: card enp0s8 192.168.168.20 dmz
 database: card enp0s8 192.168.169.30 lan
 máy test từ internett: card enp0s3 192.168.167.5 hostonly
+máy lưu src + data + backup web: card enp0s8 192.168.169.40 internal lan
