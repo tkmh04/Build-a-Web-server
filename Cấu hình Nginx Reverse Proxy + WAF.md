@@ -173,11 +173,11 @@ sudo tail -f /var/log/modsec_audit.log
 
 | Attack      | Command                                                   | Expected |
 | ----------- | ---------------------------                               | -------- |
-| Normal      | curl -I "http://<IP_WAF>/"                                | 200      |
-| Custom rule | curl -I "http://<IP_WAF>/?kickme=yes"                     | 403      |
-| SQLi        | curl -I "http://<IP_WAF>/?id=1%20OR%201=1"                | 403      |
-| XSS         | curl -I "http://<IP_WAF>/?q=<script>alert(1)</script>"    | 403      |
-| LFI         | curl -I "http://<IP_WAF>/?file=../../etc/passwd"          | 403      |
+| Normal      | curl -I "http://192.168.167.10/"                                | 200      |
+| Custom rule | curl -I "http://192.168.167.10/?kickme=yes"                     | 403      |
+| SQLi        | curl -I "http://192.168.167.10/?id=1%20OR%201=1"                | 403      |
+| XSS         | curl -I "http://192.168.167.10/?q=<script>alert(1)</script>"    | 403      |
+| LFI         | curl -I "http://192.168.167.10/?file=../../etc/passwd"          | 403      |
 
 ---
 
